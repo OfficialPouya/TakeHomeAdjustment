@@ -33,8 +33,8 @@ def calculate_true_hourly_wage():
     print("How often do you get paid?")
     print("1. Daily")
     print("2. Weekly")
-    print("3. Bi-weekly (every 2 weeks)")
-    print("4. Semi-monthly (twice a month)")
+    print("3. Bi-weekly")
+    print("4. Semi-monthly*")
     print("5. Monthly")
     
     pay_frequency_choice = input("\nEnter choice (1-5): ")
@@ -48,12 +48,12 @@ def calculate_true_hourly_wage():
     
     # Time inputs with sensible checks
     print("\n--- Work Schedule ---")
-    daily_work_hours = validate_input("Enter your daily work hours: ", float, min_value=0.1, max_value=24)
-    work_days_per_week = validate_input("How many days per week do you work?", float, min_value=0.1, max_value=7)
+    daily_work_hours = validate_input("Daily work hours: ", float, min_value=0.1, max_value=24)
+    work_days_per_week = validate_input("Number of days in week worked: ", float, min_value=0.1, max_value=7)
     
     print("\n--- Commute Details ---")
     # Check: minutes per day should be reasonable
-    daily_commute_minutes = validate_input("Enter your one-way commute time in minutes", float, min_value=0, max_value=1440)
+    daily_commute_minutes = validate_input("One-way commute time in minutes: ", float, min_value=0, max_value=1440)
     
     # Convert minutes to hours for sanity check
     daily_commute_hours_one_way = daily_commute_minutes / 60
@@ -61,20 +61,19 @@ def calculate_true_hourly_wage():
         print(f"Warning: Your one-way commute of {daily_commute_hours_one_way:.1f} hours seems unrealistic!")
         proceed = input("Do you want to continue anyway? (yes/no): ").lower()
         if proceed != 'yes':
-            daily_commute_minutes = validate_input("Enter your one-way commute time in minutes: ", float, min_value=0, max_value=1440)
+            daily_commute_minutes = validate_input("Your one-way commute time in minutes: ", float, min_value=0, max_value=1440)
     
-    daily_commute_miles = validate_input("Enter your one-way commute distance in miles: ", float, min_value=0)
+    daily_commute_miles = validate_input("One-way commute distance in miles: ", float, min_value=0)
     
     # Car-related inputs
     print("\n--- Car Details ---")
-    gas_mileage = validate_input("Enter your car's gas mileage (miles per gallon): ", float, min_value=0.1)
-    gas_price = validate_input("Enter current gas price per gallon: $", float, min_value=0.01)
+    gas_mileage = validate_input("Cars MPG: ", float, min_value=0.1)
+    gas_price = validate_input("Gas Price: $", float, min_value=0.01)
     
     # Additional commuting costs - NO YES/NO QUESTION
     print("\n--- Additional Commuting Costs ---")
-    print("Enter any additional daily commuting costs (tolls, parking, etc.)")
-    print("If none, enter 0")
-    daily_other_costs = validate_input("Enter daily additional commuting costs: $", float, min_value=0, allow_zero=True)
+    print("Additional daily commuting costs (tolls, parking, etc.)")
+    daily_other_costs = validate_input("Additional commuting costs: $", float, min_value=0, allow_zero=True)
     
     # Calculate annual income based on pay frequency
     print("\n" + "="*60)
@@ -100,7 +99,7 @@ def calculate_true_hourly_wage():
     daily_commute_hours = (daily_commute_minutes * 2) / 60  # Round trip
     round_trip_miles = daily_commute_miles * 2
     
-    # Calculate various costs - REMOVED MAINTENANCE COST
+    # Calculate various costs
     if gas_mileage > 0:
         daily_fuel_cost = (round_trip_miles / gas_mileage) * gas_price
     else:
