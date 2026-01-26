@@ -1,9 +1,33 @@
+def validate_input(prompt, input_type=float, min_value=None, max_value=None, allow_zero=False):
+    """Validate user input with optional range checking"""
+    while True:
+        try:
+            value = input_type(input(prompt))
+            
+            if min_value is not None and value < min_value:
+                print(f"Value must be at least {min_value}")
+                continue
+                
+            if max_value is not None and value > max_value:
+                print(f"Value must be at most {max_value}")
+                continue
+                
+            if not allow_zero and value == 0:
+                print("Value cannot be zero")
+                continue
+                
+            return value
+            
+        except ValueError:
+            print(f"Please enter a valid {input_type.__name__}")
+
+
 def calculate_true_hourly_wage():
-    print("=== True Hourly Wage Calculator ===")
-    print()
-    
-    # Get user input
-    name = input("Enter your name: ")
+    """Calculate true hourly wage - one time calculation"""
+    print("\n" + "="*60)
+    print("TRUE HOURLY WAGE CALCULATOR")
+    print("="*60)
+    print("\nCalculate your actual hourly wage including commute time and costs")
     
     print("\n--- Pay Information ---")
     print("How often do you get paid?")
@@ -13,357 +37,204 @@ def calculate_true_hourly_wage():
     print("4. Semi-monthly (twice a month)")
     print("5. Monthly")
     
-    pay_frequency = input("\nEnter choice (1-5): ")
+    pay_frequency_choice = input("\nEnter choice (1-5): ")
+    pay_frequency_map = {
+        '1': 'daily', '2': 'weekly', '3': 'biweekly', 
+        '4': 'semi_monthly', '5': 'monthly'
+    }
+    pay_frequency = pay_frequency_map.get(pay_frequency_choice, 'biweekly')
     
-    paycheck_amount = float(input("Enter your take-home paycheck amount: $"))
+    paycheck_amount = validate_input("Enter your take-home paycheck amount: $", float, min_value=0.01)
     
-    # Time inputs
-    daily_commute_minutes = float(input("Enter your one-way commute time in minutes: "))
-    daily_commute_miles = float(input("Enter your one-way commute distance in miles: "))
-    daily_work_hours = float(input("Enter your daily work hours (excluding lunch): "))
+    # Time inputs with sensible checks
+    print("\n--- Work Schedule ---")
+    daily_work_hours = validate_input("Enter your daily work hours: ", float, min_value=0.1, max_value=24)
+    work_days_per_week = validate_input("How many days per week do you work?", float, min_value=0.1, max_value=7)
     
-    # Days per week
-    work_days_per_week = float(input("How many days per week do you work? (e.g., 5): "))
+    print("\n--- Commute Details ---")
+    # Check: minutes per day should be reasonable
+    daily_commute_minutes = validate_input("Enter your one-way commute time in minutes", float, min_value=0, max_value=1440)
+    
+    # Convert minutes to hours for sanity check
+    daily_commute_hours_one_way = daily_commute_minutes / 60
+    if daily_commute_hours_one_way > 24:
+        print(f"Warning: Your one-way commute of {daily_commute_hours_one_way:.1f} hours seems unrealistic!")
+        proceed = input("Do you want to continue anyway? (yes/no): ").lower()
+        if proceed != 'yes':
+            daily_commute_minutes = validate_input("Enter your one-way commute time in minutes: ", float, min_value=0, max_value=1440)
+    
+    daily_commute_miles = validate_input("Enter your one-way commute distance in miles: ", float, min_value=0)
     
     # Car-related inputs
-    gas_mileage = float(input("Enter your car's gas mileage (miles per gallon): "))
-    gas_price = float(input("Enter current gas price per gallon: $"))
+    print("\n--- Car Details ---")
+    gas_mileage = validate_input("Enter your car's gas mileage (miles per gallon): ", float, min_value=0.1)
+    gas_price = validate_input("Enter current gas price per gallon: $", float, min_value=0.01)
     
-    # Additional car costs
-    print("\n--- Additional Cost Factors ---")
-    print("For more accuracy, include estimated car maintenance and depreciation.")
-    print("If unsure, you can use these estimates:")
-    print("- IRS standard mileage rate (2024): $0.67/mile (includes all car costs)")
-    print("- Or estimate maintenance/depreciation separately")
-    print()
-    
-    use_irs_rate = input("Use IRS standard mileage rate for full cost? (yes/no): ").lower()
-    
-    if use_irs_rate == 'yes':
-        irs_rate = 0.67  # 2024 IRS business mileage rate
-        maintenance_per_mile = irs_rate - (gas_price / gas_mileage)
-        print(f"Using full cost of ${irs_rate:.2f} per mile")
-    else:
-        maintenance_per_mile = float(input("Enter estimated maintenance/depreciation cost per mile (e.g., 0.15 for $0.15/mile): $"))
-    
-    # Transportation alternatives (optional)
-    print("\n--- Alternative Transportation ---")
-    print("Do you have any regular commuting costs besides driving?")
-    has_other_costs = input("e.g., tolls, parking, public transit (yes/no): ").lower()
-    
-    daily_other_costs = 0
-    if has_other_costs == 'yes':
-        daily_other_costs = float(input("Enter daily additional commuting costs (tolls, parking, etc.): $"))
-    
-    print("\n" + "="*50)
-    print(f"Calculating true hourly wage for {name}...")
-    print("="*50)
+    # Additional commuting costs - NO YES/NO QUESTION
+    print("\n--- Additional Commuting Costs ---")
+    print("Enter any additional daily commuting costs (tolls, parking, etc.)")
+    print("If none, enter 0")
+    daily_other_costs = validate_input("Enter daily additional commuting costs: $", float, min_value=0, allow_zero=True)
     
     # Calculate annual income based on pay frequency
-    print(f"\nConverting {pay_frequency} pay to annual income...")
+    print("\n" + "="*60)
+    print("="*60)
     
-    if pay_frequency == '1':  # Daily
-        annual_income = paycheck_amount * work_days_per_week * 50  # 50 weeks/year
+    if pay_frequency == 'daily':
+        annual_income = paycheck_amount * work_days_per_week * 50
         pay_description = f"${paycheck_amount:.2f} per day"
-        
-    elif pay_frequency == '2':  # Weekly
-        annual_income = paycheck_amount * 50  # 50 weeks/year
+    elif pay_frequency == 'weekly':
+        annual_income = paycheck_amount * 50
         pay_description = f"${paycheck_amount:.2f} per week"
-        
-    elif pay_frequency == '3':  # Bi-weekly (every 2 weeks)
-        annual_income = paycheck_amount * 26  # 26 pay periods/year
-        pay_description = f"${paycheck_amount:.2f} bi-weekly"
-        
-    elif pay_frequency == '4':  # Semi-monthly (twice a month)
-        annual_income = paycheck_amount * 24  # 24 pay periods/year
-        pay_description = f"${paycheck_amount:.2f} semi-monthly"
-        
-    elif pay_frequency == '5':  # Monthly
-        annual_income = paycheck_amount * 12  # 12 months/year
-        pay_description = f"${paycheck_amount:.2f} per month"
-        
-    else:
-        print("Invalid choice, defaulting to bi-weekly")
+    elif pay_frequency == 'biweekly':
         annual_income = paycheck_amount * 26
         pay_description = f"${paycheck_amount:.2f} bi-weekly"
-    
-    # Constants
-    work_weeks_per_year = 50
+    elif pay_frequency == 'semi_monthly':
+        annual_income = paycheck_amount * 24
+        pay_description = f"${paycheck_amount:.2f} semi-monthly"
+    else:  # monthly
+        annual_income = paycheck_amount * 12
+        pay_description = f"${paycheck_amount:.2f} per month"
     
     # Calculate commute costs and time
     daily_commute_hours = (daily_commute_minutes * 2) / 60  # Round trip
     round_trip_miles = daily_commute_miles * 2
     
-    # Calculate various costs
-    daily_fuel_cost = (round_trip_miles / gas_mileage) * gas_price
-    daily_maintenance_cost = round_trip_miles * maintenance_per_mile
-    daily_car_costs = daily_fuel_cost + daily_maintenance_cost + daily_other_costs
+    # Calculate various costs - REMOVED MAINTENANCE COST
+    if gas_mileage > 0:
+        daily_fuel_cost = (round_trip_miles / gas_mileage) * gas_price
+    else:
+        daily_fuel_cost = 0
     
-    # Weekly calculations
-    weekly_commute_hours = daily_commute_hours * work_days_per_week
-    weekly_work_hours = daily_work_hours * work_days_per_week
-    weekly_car_costs = daily_car_costs * work_days_per_week
+    daily_car_costs = daily_fuel_cost + daily_other_costs
     
     # Yearly calculations
+    weekly_work_hours = daily_work_hours * work_days_per_week
+    weekly_commute_hours = daily_commute_hours * work_days_per_week
+    weekly_car_costs = daily_car_costs * work_days_per_week
+    
+    work_weeks_per_year = 50
     yearly_work_hours = weekly_work_hours * work_weeks_per_year
     yearly_commute_hours = weekly_commute_hours * work_weeks_per_year
     yearly_car_costs = weekly_car_costs * work_weeks_per_year
     
-    # Total time commitment (work + commute)
-    total_yearly_hours_committed = yearly_work_hours + yearly_commute_hours
+    # Wage calculations
+    if yearly_work_hours > 0:
+        traditional_wage = annual_income / yearly_work_hours
+    else:
+        traditional_wage = 0
     
-    # True hourly wage calculation
     net_yearly_income = annual_income - yearly_car_costs
-    true_hourly_wage = net_yearly_income / total_yearly_hours_committed
+    total_committed_hours = yearly_work_hours + yearly_commute_hours
     
-    # Traditional hourly wage (just work hours)
-    traditional_hourly_wage = annual_income / yearly_work_hours
-    
-    # After-cost hourly wage (work hours only, but with costs)
-    after_cost_hourly_wage = net_yearly_income / yearly_work_hours
+    if total_committed_hours > 0:
+        true_wage = net_yearly_income / total_committed_hours
+    else:
+        true_wage = 0
     
     # Display results
-    print("\n" + "="*50)
+    print("\n" + "="*60)
     print("RESULTS")
-    print("="*50)
-    print(f"\nFor {name}:")
-    print(f"Pay frequency: {pay_description}")
-    print(f"Annual take-home income: ${annual_income:,.2f}")
-    print(f"Traditional hourly wage: ${traditional_hourly_wage:.2f}")
-    print(f"Hourly wage after costs: ${after_cost_hourly_wage:.2f}")
-    print(f"TRUE hourly wage (including commute time): ${true_hourly_wage:.2f}")
+    print("="*60)
+    print(f"Pay Frequency: {pay_description}")
     
-    print("\n" + "="*50)
-    print("COST BREAKDOWN")
-    print("="*50)
-    print(f"\nDaily Costs:")
-    print(f"  Round trip: {round_trip_miles:.1f} miles")
-    print(f"  Fuel: ${daily_fuel_cost:.2f}")
-    print(f"  Maintenance/Depreciation: ${daily_maintenance_cost:.2f}")
-    if daily_other_costs > 0:
-        print(f"  Other (tolls/parking): ${daily_other_costs:.2f}")
-    print(f"  TOTAL Daily: ${daily_car_costs:.2f}")
+    print(f"\n" + "-"*60)
+    print("WAGE ANALYSIS")
+    print("-"*60)
+    print(f"Traditional hourly wage: ${traditional_wage:.2f}")
+    print(f"True hourly wage: ${true_wage:.2f}")
+    print(f"Difference: ${traditional_wage - true_wage:.2f}")
     
-    print(f"\nYearly Costs ({work_weeks_per_year} weeks × {work_days_per_week} days/week):")
-    print(f"  Fuel: ${daily_fuel_cost * work_days_per_week * work_weeks_per_year:,.2f}")
-    print(f"  Maintenance/Depreciation: ${daily_maintenance_cost * work_days_per_week * work_weeks_per_year:,.2f}")
-    if daily_other_costs > 0:
-        print(f"  Other: ${daily_other_costs * work_days_per_week * work_weeks_per_year:,.2f}")
-    print(f"  TOTAL Yearly: ${yearly_car_costs:,.2f}")
-    
-    print("\n" + "="*50)
+    print(f"\n" + "-"*60)
     print("TIME BREAKDOWN")
-    print("="*50)
-    print(f"\nDaily:")
-    print(f"  Work: {daily_work_hours:.1f} hours")
-    print(f"  Commute: {daily_commute_hours:.1f} hours ({daily_commute_minutes} min each way)")
-    print(f"  Total: {daily_work_hours + daily_commute_hours:.1f} hours")
+    print("-"*60)
+    print(f"Work hours per day: {daily_work_hours} hours")
+    print(f"Work days per week: {work_days_per_week} days")
+    print(f"Daily commute time: {daily_commute_hours:.1f} hours ({daily_commute_minutes} min each way)")
+    print(f"Weekly work hours: {weekly_work_hours:.1f} hours")
+    print(f"Weekly commute hours: {weekly_commute_hours:.1f} hours")
+    print(f"Yearly work hours: {yearly_work_hours:.0f} hours")
+    print(f"Yearly commute hours: {yearly_commute_hours:.0f} hours")
+    print(f"Total committed time per year: {total_committed_hours:.0f} hours")
     
-    print(f"\nWeekly ({work_days_per_week} days):")
-    print(f"  Work: {weekly_work_hours:.1f} hours")
-    print(f"  Commute: {weekly_commute_hours:.1f} hours")
-    print(f"  Total: {weekly_work_hours + weekly_commute_hours:.1f} hours")
+    print(f"\n" + "-"*60)
+    print("COST BREAKDOWN")
+    print("-"*60)
+    print(f"Round trip distance: {round_trip_miles:.1f} miles")
+    print(f"Daily fuel cost: ${daily_fuel_cost:.2f}")
+    if daily_other_costs > 0:
+        print(f"Daily other costs (tolls/parking): ${daily_other_costs:.2f}")
+    print(f"Total daily commute cost: ${daily_car_costs:.2f}")
+    print(f"Yearly commute cost: ${yearly_car_costs:,.2f}")
+    print(f"Yearly take-home income: ${annual_income:,.2f}")
+    print(f"Yearly net income (after commute): ${net_yearly_income:,.2f}")
     
-    print(f"\nYearly ({work_weeks_per_year} weeks):")
-    print(f"  Work: {yearly_work_hours:.0f} hours")
-    print(f"  Commute: {yearly_commute_hours:.0f} hours")
-    print(f"  Total committed time: {total_yearly_hours_committed:.0f} hours")
+    if annual_income > 0:
+        cost_percentage = (yearly_car_costs / annual_income) * 100
+        print(f"\nCommute costs are {cost_percentage:.1f}% of your income")
     
-    print("\n" + "="*50)
-    print("IMPACT ANALYSIS")
-    print("="*50)
+    # Per paycheck perspective for common frequencies
+    print(f"\n" + "-"*60)
+    print("PAYCHECK PERSPECTIVE")
+    print("-"*60)
     
-    # Percentage impacts
-    wage_reduction_time = ((traditional_hourly_wage - true_hourly_wage) / traditional_hourly_wage) * 100
-    wage_reduction_cost = ((traditional_hourly_wage - after_cost_hourly_wage) / traditional_hourly_wage) * 100
-    time_vs_cost_impact = ((true_hourly_wage - after_cost_hourly_wage) / after_cost_hourly_wage) * 100
-    
-    print(f"\nImpact of costs alone: -${traditional_hourly_wage - after_cost_hourly_wage:.2f}/hr ({wage_reduction_cost:.1f}%)")
-    print(f"Impact of commute time: -${after_cost_hourly_wage - true_hourly_wage:.2f}/hr ({time_vs_cost_impact:.1f}%)")
-    print(f"Total impact: -${traditional_hourly_wage - true_hourly_wage:.2f}/hr ({wage_reduction_time:.1f}%)")
-    
-    # Calculate how much work time pays for commute
-    hours_to_pay_for_daily_commute = daily_car_costs / (annual_income / yearly_work_hours / work_days_per_week)
-    print(f"\nYou work {hours_to_pay_for_daily_commute:.2f} hours each day just to pay for your commute")
-    
-    # Per paycheck impact
-    if pay_frequency == '3':  # Bi-weekly
+    if pay_frequency == 'biweekly':
         biweekly_commute_cost = daily_car_costs * work_days_per_week * 2
         biweekly_commute_hours = daily_commute_hours * work_days_per_week * 2
-        print(f"\nPer Paycheck (Bi-weekly):")
+        print(f"Per Bi-weekly Paycheck:")
+        print(f"  Take-home: ${paycheck_amount:.2f}")
         print(f"  Commute costs: ${biweekly_commute_cost:.2f}")
         print(f"  Commute time: {biweekly_commute_hours:.1f} hours")
-        print(f"  That's {biweekly_commute_cost/paycheck_amount*100:.1f}% of your paycheck!")
+        print(f"  Effective take-home: ${paycheck_amount - biweekly_commute_cost:.2f}")
+        print(f"  Commute eats {biweekly_commute_cost/paycheck_amount*100:.1f}% of your paycheck")
     
-    return true_hourly_wage
+    elif pay_frequency == 'weekly':
+        weekly_commute_cost = daily_car_costs * work_days_per_week
+        weekly_commute_hours = daily_commute_hours * work_days_per_week
+        print(f"Per Weekly Paycheck:")
+        print(f"  Take-home: ${paycheck_amount:.2f}")
+        print(f"  Commute costs: ${weekly_commute_cost:.2f}")
+        print(f"  Effective take-home: ${paycheck_amount - weekly_commute_cost:.2f}")
+    
+    print(f"\n" + "="*60)
+    print("SUMMARY")
+    print("="*60)
+    print(f"Your true hourly wage is ${true_wage:.2f}, which is ${traditional_wage - true_wage:.2f}")
+    print(f"less than your traditional wage of ${traditional_wage:.2f}.")
+    
+    if true_wage < traditional_wage:
+        print(f"\nYour commute reduces your effective wage by:")
+        print(f"  ${(traditional_wage - true_wage):.2f} per hour")
+        print(f"  ${(traditional_wage - true_wage) * yearly_work_hours:,.2f} per year")
+    
+    return true_wage
 
 
-def quick_calculator():
-    """A simpler version for quick calculations"""
-    print("\n=== Quick Calculator (Bi-weekly Focus) ===")
+def main():
+    """Main program"""
+    print("Welcome to the True Hourly Wage Calculator!")
+    print("This tool calculates your actual hourly wage including commute time and costs.")
     
-    name = input("Your name: ")
-    biweekly_pay = float(input("Bi-weekly take-home pay: $"))
-    work_hours = float(input("Daily work hours: "))
-    work_days_per_week = float(input("Days per week (e.g., 5): "))
-    commute_minutes = float(input("One-way commute minutes: "))
-    commute_miles = float(input("One-way commute miles: "))
-    mpg = float(input("Car MPG: "))
-    gas_price = float(input("Gas price per gallon: $"))
-    
-    # Quick calculations
-    daily_commute_hours = commute_minutes * 2 / 60
-    round_trip_miles = commute_miles * 2
-    daily_fuel_cost = (round_trip_miles / mpg) * gas_price
-    
-    # Simple estimate
-    daily_other_car_cost = round_trip_miles * 0.30  # $0.30/mile for other costs
-    daily_total_cost = daily_fuel_cost + daily_other_car_cost
-    
-    # Annual calculations
-    annual_income = biweekly_pay * 26
-    weekly_work_hours = work_hours * work_days_per_week
-    yearly_work_hours = weekly_work_hours * 50
-    yearly_commute_hours = daily_commute_hours * work_days_per_week * 50
-    yearly_costs = daily_total_cost * work_days_per_week * 50
-    
-    traditional_wage = annual_income / yearly_work_hours
-    true_wage = (annual_income - yearly_costs) / (yearly_work_hours + yearly_commute_hours)
-    
-    # Per paycheck perspective
-    biweekly_commute_cost = daily_total_cost * work_days_per_week * 2
-    biweekly_commute_hours = daily_commute_hours * work_days_per_week * 2
-    
-    print(f"\n=== Results for {name} ===")
-    print(f"Annual income: ${annual_income:,.2f}")
-    print(f"Traditional wage: ${traditional_wage:.2f}/hr")
-    print(f"True wage: ${true_wage:.2f}/hr")
-    print(f"Difference: ${traditional_wage - true_wage:.2f}/hr")
-    print(f"\nPer Bi-weekly Paycheck:")
-    print(f"  Commute costs: ${biweekly_commute_cost:.2f}")
-    print(f"  Commute time: {biweekly_commute_hours:.1f} hours")
-    print(f"  Effective take-home: ${biweekly_pay - biweekly_commute_cost:.2f}")
-
-
-def biweekly_focus_calculator():
-    """Special calculator focused on bi-weekly pay"""
-    print("\n=== Bi-weekly Pay True Wage Calculator ===")
-    
-    name = input("Enter your name: ")
-    biweekly_pay = float(input("Enter your bi-weekly take-home pay: $"))
-    work_days_per_week = float(input("How many days per week do you work? (e.g., 5): "))
-    daily_work_hours = float(input("Enter your daily work hours: "))
-    
-    print("\n--- Commute Details ---")
-    daily_commute_minutes = float(input("One-way commute time in minutes: "))
-    daily_commute_miles = float(input("One-way commute distance in miles: "))
-    
-    print("\n--- Car Details ---")
-    gas_mileage = float(input("Car's gas mileage (MPG): "))
-    gas_price = float(input("Current gas price per gallon: $"))
-    
-    # Quick cost estimate
-    print("\nUsing simplified cost estimate:")
-    print("Fuel + $0.30/mile for maintenance/depreciation")
-    
-    # Calculations
-    daily_commute_hours = daily_commute_minutes * 2 / 60
-    round_trip_miles = daily_commute_miles * 2
-    daily_fuel_cost = (round_trip_miles / gas_mileage) * gas_price
-    daily_maintenance = round_trip_miles * 0.30
-    daily_total_cost = daily_fuel_cost + daily_maintenance
-    
-    # Annual perspective
-    annual_income = biweekly_pay * 26
-    yearly_work_hours = daily_work_hours * work_days_per_week * 50
-    yearly_commute_hours = daily_commute_hours * work_days_per_week * 50
-    yearly_costs = daily_total_cost * work_days_per_week * 50
-    
-    # Bi-weekly perspective
-    biweekly_commute_cost = daily_total_cost * work_days_per_week * 2
-    biweekly_commute_hours = daily_commute_hours * work_days_per_week * 2
-    biweekly_work_hours = daily_work_hours * work_days_per_week * 2
-    
-    # Wage calculations
-    traditional_hourly = annual_income / yearly_work_hours
-    net_annual_income = annual_income - yearly_costs
-    true_hourly = net_annual_income / (yearly_work_hours + yearly_commute_hours)
-    
-    # Display
-    print("\n" + "="*50)
-    print(f"RESULTS FOR {name.upper()}")
-    print("="*50)
-    
-    print(f"\nPAYCHECK ANALYSIS (Every 2 weeks):")
-    print(f"  Take-home pay: ${biweekly_pay:.2f}")
-    print(f"  Commute costs: -${biweekly_commute_cost:.2f}")
-    print(f"  Effective pay: ${biweekly_pay - biweekly_commute_cost:.2f}")
-    print(f"  Commute eats {biweekly_commute_cost/biweekly_pay*100:.1f}% of your paycheck")
-    
-    print(f"\nTIME ANALYSIS (Per Pay Period):")
-    print(f"  Work time: {biweekly_work_hours:.1f} hours")
-    print(f"  Commute time: {biweekly_commute_hours:.1f} hours")
-    print(f"  Total: {biweekly_work_hours + biweekly_commute_hours:.1f} hours")
-    
-    print(f"\nHOURLY WAGES:")
-    print(f"  Traditional: ${traditional_hourly:.2f}/hr")
-    print(f"  True wage: ${true_hourly:.2f}/hr")
-    print(f"  Difference: ${traditional_hourly - true_hourly:.2f}/hr")
-    
-    print(f"\nDAILY COMMUTE COST: ${daily_total_cost:.2f}")
-    print(f"  Fuel: ${daily_fuel_cost:.2f}")
-    print(f"  Other: ${daily_maintenance:.2f}")
-    
-    return true_hourly
-
-
-# Main program
-if __name__ == "__main__":
-    print("TRUE HOURLY WAGE CALCULATOR")
-    print("============================")
-    print("Calculate your actual hourly wage including")
-    print("commute time and costs")
-    print()
-    
-    print("Choose calculator mode:")
-    print("1. Full Calculator (all pay frequencies)")
-    print("2. Quick Bi-weekly Calculator")
-    print("3. Bi-weekly Focus Calculator")
-    
-    mode = input("\nEnter choice (1-3): ")
-    
-    try:
-        if mode == "1":
+    while True:
+        try:
+            # Run the calculator
             calculate_true_hourly_wage()
-        elif mode == "2":
-            quick_calculator()
-        elif mode == "3":
-            biweekly_focus_calculator()
-        else:
-            print("Invalid choice. Using bi-weekly focus.")
-            biweekly_focus_calculator()
-        
-        # Ask if user wants to calculate again
-        while True:
+            
+            # Ask if user wants to calculate again
+            print("\n" + "="*60)
             again = input("\nCalculate again? (yes/no): ").lower()
-            if again == 'yes':
-                print("\nChoose mode: 1=Full, 2=Quick, 3=Bi-weekly Focus")
-                mode = input("Enter choice: ")
-                if mode == "1":
-                    calculate_true_hourly_wage()
-                elif mode == "2":
-                    quick_calculator()
-                else:
-                    biweekly_focus_calculator()
-            elif again == 'no':
-                print("\nThank you for using the True Hourly Wage Calculator!")
+            
+            if again != 'yes':
                 break
-            else:
-                print("Please enter 'yes' or 'no'")
                 
-    except ValueError:
-        print("\nError: Please enter valid numbers for all inputs.")
-    except ZeroDivisionError:
-        print("\nError: Work hours cannot be zero.")
-    except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}")
+        except KeyboardInterrupt:
+            print("\n\nProgram interrupted. Goodbye!")
+            break
+        except Exception as e:
+            print(f"\nAn error occurred: {e}")
+            import traceback
+            traceback.print_exc()
+
+
+if __name__ == "__main__":
+    main()
