@@ -65,10 +65,27 @@ def calculate_true_hourly_wage():
     
     daily_commute_miles = validate_input("One-way commute distance in miles: ", float, min_value=0)
     
-    # Car-related inputs
-    print("\n--- Car Details ---")
-    gas_mileage = validate_input("Cars MPG: ", float, min_value=0.1)
-    gas_price = validate_input("Gas Price: $", float, min_value=0.01)
+    # Vehicle type selection - SIMPLIFIED
+    print("\n--- Vehicle Type ---")
+    print("Select your vehicle type:")
+    print("1. Gas Vehicle")
+    print("2. Electric Vehicle (EV)")
+    vehicle_choice = input("Enter choice (1 or 2): ")
+    
+    # Initialize variables for both paths
+    gas_mileage = 0
+    gas_price = 0
+    ev_efficiency = 0
+    electricity_price = 0
+    
+    if vehicle_choice == '2':  # EV
+        print("\n--- EV Details ---")
+        ev_efficiency = validate_input("EV efficiency (miles per kWh): ", float, min_value=0.1)
+        electricity_price = validate_input("Electricity price ($ per kWh): $", float, min_value=0.01)
+    else:  # Default to gas vehicle (including if user enters anything other than '2')
+        print("\n--- Car Details ---")
+        gas_mileage = validate_input("Cars MPG: ", float, min_value=0.1)
+        gas_price = validate_input("Gas Price: $", float, min_value=0.01)
     
     # Additional commuting costs - NO YES/NO QUESTION
     print("\n--- Additional Commuting Costs ---")
@@ -99,11 +116,24 @@ def calculate_true_hourly_wage():
     daily_commute_hours = (daily_commute_minutes * 2) / 60  # Round trip
     round_trip_miles = daily_commute_miles * 2
     
-    # Calculate various costs
-    if gas_mileage > 0:
-        daily_fuel_cost = (round_trip_miles / gas_mileage) * gas_price
-    else:
-        daily_fuel_cost = 0
+    # Calculate various costs based on vehicle type
+    daily_fuel_cost = 0
+    fuel_type = ""
+    efficiency_unit = ""
+    price_per_unit = 0
+    
+    if vehicle_choice == '2':  # EV
+        if ev_efficiency > 0:
+            daily_fuel_cost = (round_trip_miles / ev_efficiency) * electricity_price
+        fuel_type = "electricity"
+        efficiency_unit = "mi/kWh"
+        price_per_unit = electricity_price
+    else:  # Gas vehicle
+        if gas_mileage > 0:
+            daily_fuel_cost = (round_trip_miles / gas_mileage) * gas_price
+        fuel_type = "gas"
+        efficiency_unit = "MPG"
+        price_per_unit = gas_price
     
     daily_car_costs = daily_fuel_cost + daily_other_costs
     
@@ -136,6 +166,7 @@ def calculate_true_hourly_wage():
     print("RESULTS")
     print("="*60)
     print(f"Pay Frequency: {pay_description}")
+    print(f"Vehicle Type: {'Electric Vehicle' if vehicle_choice == '2' else 'Gas Vehicle'}")
     
     print(f"\n" + "-"*60)
     print("WAGE ANALYSIS")
@@ -160,7 +191,10 @@ def calculate_true_hourly_wage():
     print("COST BREAKDOWN")
     print("-"*60)
     print(f"Round trip distance: {round_trip_miles:.1f} miles")
-    print(f"Daily fuel cost: ${daily_fuel_cost:.2f}")
+    efficiency_value = ev_efficiency if vehicle_choice == '2' else gas_mileage
+    print(f"Vehicle efficiency: {efficiency_value:.1f} {efficiency_unit}")
+    print(f"Fuel price: ${price_per_unit:.2f} per {'kWh' if vehicle_choice == '2' else 'gallon'}")
+    print(f"Daily {fuel_type} cost: ${daily_fuel_cost:.2f}")
     if daily_other_costs > 0:
         print(f"Daily other costs (tolls/parking): ${daily_other_costs:.2f}")
     print(f"Total daily commute cost: ${daily_car_costs:.2f}")
