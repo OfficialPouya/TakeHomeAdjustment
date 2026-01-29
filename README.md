@@ -46,7 +46,7 @@ Types of commutes:
 
  1.  **Run the program**: `python truecost.py`
     
- 2.  **Enter your info**: How often you get paid and how much
+ 2.  **Enter your info**:
 		 - Pay
 		 - Work Schedule
 		 - Commute Details
