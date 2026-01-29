@@ -63,38 +63,76 @@ def calculate_true_hourly_wage():
         if proceed != 'yes':
             daily_commute_minutes = validate_input("Your one-way commute time in minutes: ", float, min_value=0, max_value=1440)
     
-    daily_commute_miles = validate_input("One-way commute distance in miles: ", float, min_value=0)
+    # TRANSPORTATION TYPE SELECTION
+    print("\n--- Transportation Type ---")
+    print("Select your transportation type:")
+    print("1. Driving (Car)")
+    print("2. Public Transportation")
+    print("3. Electric Vehicle (EV)")
     
-    # Vehicle type selection - SIMPLIFIED
-    print("\n--- Vehicle Type ---")
-    print("Select your vehicle type:")
-    print("1. Gas Vehicle")
-    print("2. Electric Vehicle (EV)")
-    vehicle_choice = input("Enter choice (1 or 2): ")
+    transport_choice = input("Enter choice (1, 2, or 3): ")
     
-    # Initialize variables for both paths
+    # Initialize variables for all transport types
+    transport_type = ""
+    daily_commute_miles = 0
     gas_mileage = 0
     gas_price = 0
     ev_efficiency = 0
     electricity_price = 0
+    daily_public_transport_cost = 0
+    monthly_pass_cost = 0
     
-    if vehicle_choice == '2':  # EV
+    if transport_choice == '2':  # Public Transport
+        transport_type = "public_transport"
+        print("\n--- Public Transport Details ---")
+        print("Enter your public transport costs:")
+        print("Option A: Daily cost")
+        print("Option B: Monthly pass")
+        cost_choice = input("Choose option (A or B): ").upper()
+        
+        if cost_choice == 'A':
+            daily_public_transport_cost = validate_input(
+                "Daily round-trip cost for public transport: $", 
+                float, min_value=0
+            )
+            # No need for monthly pass cost
+        else:
+            monthly_pass_cost = validate_input(
+                "Monthly pass cost: $", 
+                float, min_value=0
+            )
+            # Calculate daily cost from monthly pass
+            daily_public_transport_cost = monthly_pass_cost / (work_days_per_week * 4.33)  # Average weeks per month
+        
+        print("\n--- Additional Public Transport Details ---")
+        daily_walking_minutes = validate_input(
+            "Daily walking time to/from stations/stops (minutes): ", 
+            float, min_value=0
+        )
+        # Add walking time to commute time
+        daily_commute_minutes += daily_walking_minutes
+        
+    elif transport_choice == '3':  # EV
+        transport_type = "ev"
         print("\n--- EV Details ---")
+        daily_commute_miles = validate_input("One-way commute distance in miles: ", float, min_value=0)
         ev_efficiency = validate_input("EV efficiency (miles per kWh): ", float, min_value=0.1)
         electricity_price = validate_input("Electricity price ($ per kWh): $", float, min_value=0.01)
-    else:  # Default to gas vehicle (including if user enters anything other than '2')
+        
+    else:  # Driving (default) - including if user enters anything other than '2' or '3'
+        transport_type = "car"
         print("\n--- Car Details ---")
-        gas_mileage = validate_input("Cars MPG: ", float, min_value=0.1)
-        gas_price = validate_input("Gas Price: $", float, min_value=0.01)
+        daily_commute_miles = validate_input("One-way commute distance in miles: ", float, min_value=0)
+        gas_mileage = validate_input("Car's MPG: ", float, min_value=0.1)
+        gas_price = validate_input("Gas price per gallon: $", float, min_value=0.01)
     
-    # Additional commuting costs - NO YES/NO QUESTION
+    # Additional commuting costs
     print("\n--- Additional Commuting Costs ---")
-    print("Additional daily commuting costs (tolls, parking, etc.)")
-    daily_other_costs = validate_input("Additional commuting costs: $", float, min_value=0, allow_zero=True)
+    print("Additional daily commuting costs (parking, tolls, bike maintenance, etc.)")
+    daily_other_costs = validate_input("Additional daily commuting costs: $", float, min_value=0, allow_zero=True)
     
     # Calculate annual income based on pay frequency
     print("\n" + "="*60)
-    print("="*60)
     
     if pay_frequency == 'daily':
         annual_income = paycheck_amount * work_days_per_week * 50
@@ -114,38 +152,46 @@ def calculate_true_hourly_wage():
     
     # Calculate commute costs and time
     daily_commute_hours = (daily_commute_minutes * 2) / 60  # Round trip
-    round_trip_miles = daily_commute_miles * 2
     
-    # Calculate various costs based on vehicle type
-    daily_fuel_cost = 0
-    fuel_type = ""
-    efficiency_unit = ""
-    price_per_unit = 0
+    # Calculate daily commute costs based on transport type
+    daily_commute_cost = 0
+    cost_details = ""
     
-    if vehicle_choice == '2':  # EV
-        if ev_efficiency > 0:
-            daily_fuel_cost = (round_trip_miles / ev_efficiency) * electricity_price
-        fuel_type = "electricity"
-        efficiency_unit = "mi/kWh"
-        price_per_unit = electricity_price
-    else:  # Gas vehicle
+    if transport_type == "car":
+        round_trip_miles = daily_commute_miles * 2
         if gas_mileage > 0:
             daily_fuel_cost = (round_trip_miles / gas_mileage) * gas_price
-        fuel_type = "gas"
-        efficiency_unit = "MPG"
-        price_per_unit = gas_price
-    
-    daily_car_costs = daily_fuel_cost + daily_other_costs
+        daily_commute_cost = daily_fuel_cost + daily_other_costs
+        cost_details = f"Fuel: ${daily_fuel_cost:.2f}"
+        if daily_other_costs > 0:
+            cost_details += f" + Other: ${daily_other_costs:.2f}"
+        
+    elif transport_type == "ev":
+        round_trip_miles = daily_commute_miles * 2
+        if ev_efficiency > 0:
+            daily_electricity_cost = (round_trip_miles / ev_efficiency) * electricity_price
+        daily_commute_cost = daily_electricity_cost + daily_other_costs
+        cost_details = f"Electricity: ${daily_electricity_cost:.2f}"
+        if daily_other_costs > 0:
+            cost_details += f" + Other: ${daily_other_costs:.2f}"
+        
+    elif transport_type == "public_transport":
+        daily_commute_cost = daily_public_transport_cost + daily_other_costs
+        cost_details = f"Transport fare: ${daily_public_transport_cost:.2f}"
+        if monthly_pass_cost > 0:
+            cost_details += f" (from ${monthly_pass_cost:.2f}/month pass)"
+        if daily_other_costs > 0:
+            cost_details += f" + Other: ${daily_other_costs:.2f}"
     
     # Yearly calculations
     weekly_work_hours = daily_work_hours * work_days_per_week
     weekly_commute_hours = daily_commute_hours * work_days_per_week
-    weekly_car_costs = daily_car_costs * work_days_per_week
+    weekly_commute_costs = daily_commute_cost * work_days_per_week
     
     work_weeks_per_year = 50
     yearly_work_hours = weekly_work_hours * work_weeks_per_year
     yearly_commute_hours = weekly_commute_hours * work_weeks_per_year
-    yearly_car_costs = weekly_car_costs * work_weeks_per_year
+    yearly_commute_costs = weekly_commute_costs * work_weeks_per_year
     
     # Wage calculations
     if yearly_work_hours > 0:
@@ -153,7 +199,7 @@ def calculate_true_hourly_wage():
     else:
         traditional_wage = 0
     
-    net_yearly_income = annual_income - yearly_car_costs
+    net_yearly_income = annual_income - yearly_commute_costs
     total_committed_hours = yearly_work_hours + yearly_commute_hours
     
     if total_committed_hours > 0:
@@ -166,7 +212,14 @@ def calculate_true_hourly_wage():
     print("RESULTS")
     print("="*60)
     print(f"Pay Frequency: {pay_description}")
-    print(f"Vehicle Type: {'Electric Vehicle' if vehicle_choice == '2' else 'Gas Vehicle'}")
+    
+    # Display transport type
+    if transport_type == "car":
+        print(f"Transportation: Driving (Gas Vehicle)")
+    elif transport_type == "ev":
+        print(f"Transportation: Electric Vehicle")
+    elif transport_type == "public_transport":
+        print(f"Transportation: Public Transport")
     
     print(f"\n" + "-"*60)
     print("WAGE ANALYSIS")
@@ -180,7 +233,7 @@ def calculate_true_hourly_wage():
     print("-"*60)
     print(f"Work hours per day: {daily_work_hours} hours")
     print(f"Work days per week: {work_days_per_week} days")
-    print(f"Daily commute time: {daily_commute_hours:.1f} hours ({daily_commute_minutes} min each way)")
+    print(f"Daily commute time: {daily_commute_hours:.1f} hours ({daily_commute_minutes*2:.0f} min total)")
     print(f"Weekly work hours: {weekly_work_hours:.1f} hours")
     print(f"Weekly commute hours: {weekly_commute_hours:.1f} hours")
     print(f"Yearly work hours: {yearly_work_hours:.0f} hours")
@@ -190,21 +243,27 @@ def calculate_true_hourly_wage():
     print(f"\n" + "-"*60)
     print("COST BREAKDOWN")
     print("-"*60)
-    print(f"Round trip distance: {round_trip_miles:.1f} miles")
-    efficiency_value = ev_efficiency if vehicle_choice == '2' else gas_mileage
-    print(f"Vehicle efficiency: {efficiency_value:.1f} {efficiency_unit}")
-    print(f"Fuel price: ${price_per_unit:.2f} per {'kWh' if vehicle_choice == '2' else 'gallon'}")
-    print(f"Daily {fuel_type} cost: ${daily_fuel_cost:.2f}")
-    if daily_other_costs > 0:
-        print(f"Daily other costs (tolls/parking): ${daily_other_costs:.2f}")
-    print(f"Total daily commute cost: ${daily_car_costs:.2f}")
-    print(f"Yearly commute cost: ${yearly_car_costs:,.2f}")
-    print(f"Yearly take-home income: ${annual_income:,.2f}")
-    print(f"Yearly net income (after commute): ${net_yearly_income:,.2f}")
+    
+    if transport_type in ["car", "ev"]:
+        round_trip_miles = daily_commute_miles * 2
+        print(f"Round trip distance: {round_trip_miles:.1f} miles")
+        
+        if transport_type == "car":
+            print(f"Vehicle efficiency: {gas_mileage:.1f} MPG")
+            print(f"Gas price: ${gas_price:.2f} per gallon")
+        elif transport_type == "ev":
+            print(f"Vehicle efficiency: {ev_efficiency:.1f} mi/kWh")
+            print(f"Electricity price: ${electricity_price:.2f} per kWh")
+    
+    print(f"Daily commute cost breakdown: {cost_details}")
+    print(f"Total daily commute cost: ${daily_commute_cost:.2f}")
+    print(f"Yearly commute cost: ${yearly_commute_costs:,.2f}")
+    print(f"Yearly take-home pay: ${annual_income:,.2f}")
+    print(f"Yearly disposable income (after commute): ${net_yearly_income:,.2f}")
     
     if annual_income > 0:
-        cost_percentage = (yearly_car_costs / annual_income) * 100
-        print(f"\nCommute costs are {cost_percentage:.1f}% of your income")
+        cost_percentage = (yearly_commute_costs / annual_income) * 100
+        print(f"\nCommute costs consume {cost_percentage:.1f}% of your take-home pay")
     
     # Per paycheck perspective for common frequencies
     print(f"\n" + "-"*60)
@@ -212,7 +271,7 @@ def calculate_true_hourly_wage():
     print("-"*60)
     
     if pay_frequency == 'biweekly':
-        biweekly_commute_cost = daily_car_costs * work_days_per_week * 2
+        biweekly_commute_cost = daily_commute_cost * work_days_per_week * 2
         biweekly_commute_hours = daily_commute_hours * work_days_per_week * 2
         print(f"Per Bi-weekly Paycheck:")
         print(f"  Take-home: ${paycheck_amount:.2f}")
@@ -222,7 +281,7 @@ def calculate_true_hourly_wage():
         print(f"  Commute eats {biweekly_commute_cost/paycheck_amount*100:.1f}% of your paycheck")
     
     elif pay_frequency == 'weekly':
-        weekly_commute_cost = daily_car_costs * work_days_per_week
+        weekly_commute_cost = daily_commute_cost * work_days_per_week
         weekly_commute_hours = daily_commute_hours * work_days_per_week
         print(f"Per Weekly Paycheck:")
         print(f"  Take-home: ${paycheck_amount:.2f}")
