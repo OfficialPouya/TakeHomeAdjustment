@@ -3,6 +3,15 @@
 
 A Python tool that figures out what you _really_ make per hour when you include all the hidden costs of getting to and from work.
 
+## New UI!
+![Main Screen](https://github.com/OfficialPouya/TakeHomeAdjustment/blob/main/UI%20Pictures/Screenshot%202026-01-31%20at%208.51.40%E2%80%AFPM.png?raw=true)
+![Pay Frequency](https://github.com/OfficialPouya/TakeHomeAdjustment/blob/main/UI%20Pictures/Screenshot%202026-01-31%20at%208.52.06%E2%80%AFPM.png?raw=true)
+![Gas Car](https://github.com/OfficialPouya/TakeHomeAdjustment/blob/main/UI%20Pictures/Screenshot%202026-01-31%20at%208.52.19%E2%80%AFPM.png?raw=true)
+![EV Car](https://github.com/OfficialPouya/TakeHomeAdjustment/blob/main/UI%20Pictures/Screenshot%202026-01-31%20at%208.52.27%E2%80%AFPM.png?raw=true)
+![Public Transport](https://github.com/OfficialPouya/TakeHomeAdjustment/blob/main/UI%20Pictures/Screenshot%202026-01-31%20at%208.52.32%E2%80%AFPM.png?raw=true)
+![Walking/Biking](https://github.com/OfficialPouya/TakeHomeAdjustment/blob/main/UI%20Pictures/Screenshot%202026-01-31%20at%208.52.36%E2%80%AFPM.png?raw=true)
+![Results](https://github.com/OfficialPouya/TakeHomeAdjustment/blob/main/UI%20Pictures/Screenshot%202026-01-31%20at%208.53.30%E2%80%AFPM.png?raw=true)
+![Results Data Visuals](https://github.com/OfficialPouya/TakeHomeAdjustment/blob/main/UI%20Pictures/Screenshot%202026-01-31%20at%208.53.48%E2%80%AFPM.png?raw=true)
 ## What It Calculates
 
 ### Your True Hourly Wage
@@ -46,7 +55,7 @@ Types of commutes:
 
  1.  **Run the program**: `python truecost.py`
     
- 2.  **Enter your info**:
+ 2.  **Enter your info**: How often you get paid and how much
 		 - Pay
 		 - Work Schedule
 		 - Commute Details
