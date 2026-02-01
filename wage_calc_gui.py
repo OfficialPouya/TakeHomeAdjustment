@@ -47,6 +47,8 @@ class TrueHourlyWageCalculator:
         #notebook for tabs
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill='both', expand=True, padx=10, pady=10)
+        exit_button = ttk.Button(self.root, text="Exit", command=self.root.destroy)
+        exit_button.place(relx=0.99, rely=0.99, anchor='se') 
         style = ttk.Style()
         style.configure('TNotebook', background='#f0f0f0')
         style.configure('TNotebook.Tab', background='#f0f0f0')
