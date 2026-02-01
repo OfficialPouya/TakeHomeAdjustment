@@ -42,12 +42,20 @@ class TrueHourlyWageCalculator:
         self.pay_frequency = tk.StringVar(value="biweekly")
         
         self.setup_ui()
-        
+
+    def exit_app(self):
+        try:
+            if hasattr(self, 'results'):
+                plt.close('all')  # close matplotlib figures
+            self.root.quit()
+        except:
+            self.root.destroy()
+
     def setup_ui(self):
         #notebook for tabs
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill='both', expand=True, padx=10, pady=10)
-        exit_button = ttk.Button(self.root, text="Exit", command=self.root.destroy)
+        exit_button = ttk.Button(self.root, text="Exit", command=self.exit_app)
         exit_button.place(relx=0.99, rely=0.99, anchor='se') 
         style = ttk.Style()
         style.configure('TNotebook', background='#f0f0f0')
